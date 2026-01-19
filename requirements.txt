@@ -1,1 +1,3 @@
-minerl
+minerl==0.4.4
+gym==0.21.0
+numpy

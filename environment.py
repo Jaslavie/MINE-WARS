@@ -1,7 +1,7 @@
-import gym
 import minerl
+import gym
 
-env = gym.make('MineRLBasaltFindCave-v0')
+env = gym.make('MineRLNavigateDense-v0')
 
 # get observation from agent
 obs = env.reset()
@@ -16,4 +16,5 @@ while not done:
     # Lets not do that
     action["ESC"] = 0
     obs, reward, done, _ = env.step(action)
+    print(f"reward={reward}") 
     env.render()
