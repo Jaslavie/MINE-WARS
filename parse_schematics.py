@@ -1,4 +1,5 @@
 import anvil
+import numpy as np
 
 # Each file represents different arena bounds
 # Use x (left right) and z (forward back) 
@@ -20,10 +21,14 @@ BLOCK_ID_TO_CATEGORY = {
     121: 7,  # end stone — placeable defense block
     35:  6,  # wool (all colors) — team base markers / placeable defense
 }
+CATEGORY_NAMES=["air", "solid", "bed", "breakable", "generator", "void", "team_base", "placeable"]
 
 # Find bounding boxes
 min_x = min_y = min_z = float('inf')
 max_x = max_y = max_z = float('-inf')
+
+# Collect block ids
+blocks = []
 
 for filename, reg_x, reg_z in region_files:
     region = anvil.Region.from_file(filename)
@@ -71,6 +76,8 @@ for filename, reg_x, reg_z in region_files:
                             max_y = max(max_y, y)
                             min_z = min(min_z, wz)
                             max_z = max(max_z, wz)
+                            # Add new block
+                            blocks.append((wx, y, wz, block.id))
 
     print(f"Bounding box:")
     print(f"  X: {min_x} to {max_x}  (width: {max_x - min_x + 1})")
@@ -98,3 +105,13 @@ for xi in range(W):
             if voxels[xi, yi, zi] != 0:  # not air
                 break
             voxels[xi, yi, zi] = 5  # void
+
+# Save to npz file
+id_to_cat_array = np.array([BLOCK_ID_TO_CATEGORY.get(block_id, 1) for block_id in range(256)], dtype=np.uint8)
+np.savez("schematics_with_labels.npz",
+    voxels=voxels,                                  # (W, H, D) uint8,
+    category_names=list(CATEGORY_NAMES),   # list of category indices
+    block_id_to_category=id_to_cat_array,           # Maps all block ids to a category
+    origin=np.array([min_x, min_y, min_z]),         # world-space offset of voxels[0,0,0]
+    shape=np.array([W, H, D]),                      # Overall dimensionality
+)
