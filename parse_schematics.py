@@ -9,6 +9,19 @@ region_files = [
     ("Aquarium/region/r.-1.-1.mca", -1, -1), # Southwest of origin
 ]
 
+# Number based Categories
+# Maps block id to category
+# Everything not listed defaults to solid (1)
+BLOCK_ID_TO_CATEGORY = {
+    0:   0,  # air
+    26:  2,  # bed — the objective to defend/destroy
+    57:  4,  # diamond block — generator
+    133: 4,  # emerald block — generator
+    121: 7,  # end stone — placeable defense block
+    35:  6,  # wool (all colors) — team base markers / placeable defense
+}
+
+# Find bounding boxes
 min_x = min_y = min_z = float('inf')
 max_x = max_y = max_z = float('-inf')
 
@@ -63,3 +76,25 @@ for filename, reg_x, reg_z in region_files:
     print(f"  X: {min_x} to {max_x}  (width: {max_x - min_x + 1})")
     print(f"  Y: {min_y} to {max_y}  (height: {max_y - min_y + 1})")
     print(f"  Z: {min_z} to {max_z}  (depth: {max_z - min_z + 1})")
+
+# Build 3D voxel array to represent minecraft blocks
+W = max_x - min_x + 1 # Full width of world
+H = max_y - min_y + 1 # Height
+D = max_z - min_z + 1 # Depth
+
+# Default to air (zeros)
+voxels = np.zeros((W, H, D), dtype = np.uint8)
+
+# Map blocks at location to a new voxel
+# voxels are set to the block's category
+for wx, y, wz, block_id in blocks:
+    voxels[wx - min_x, y - min_y, wz - min_z] = BLOCK_ID_TO_CATEGORY.get(block_id, 1)  # default: solid
+
+# Mark void objects
+# All objects under the lowest solid block
+for xi in range(W):
+    for zi in range(D):
+        for yi in range(H):
+            if voxels[xi, yi, zi] != 0:  # not air
+                break
+            voxels[xi, yi, zi] = 5  # void
